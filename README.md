@@ -1,3 +1,3 @@
 # Canini
 
-A minimal web frontend to carnivora for admins.
+A minimal command line frontend to carnivora for admins.
