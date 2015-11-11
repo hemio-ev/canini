@@ -16,11 +16,12 @@ conn = psycopg2.connect("postgres://postgres@/carnivora", cursor_factory=NamedTu
 
 try:
     args = parser.parse_args()
-    args.func(args, conn)
+    func = args.func
 except AttributeError:
     parser.print_usage()
+conn.commit()
 
-
+func(args, conn)
 #data = dbExec("SELECT *, ARRAY(SELECT CAST (role AS varchar) FROM backend.auth WHERE machine=m.name) AS authorized_roles FROM backend.machine AS m")
 #printTable(data)
 #
