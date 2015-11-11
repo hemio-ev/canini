@@ -19,18 +19,8 @@ try:
     func = args.func
 except AttributeError:
     parser.print_usage()
+    exit(2)
 conn.commit()
 
 func(args, conn)
-#data = dbExec("SELECT *, ARRAY(SELECT CAST (role AS varchar) FROM backend.auth WHERE machine=m.name) AS authorized_roles FROM backend.machine AS m")
-#printTable(data)
-#
-#data = dbExec("SELECT * FROM system.service")
-#printTable(data)
-#
-#data = dbExec("SELECT * FROM system.service_entity")
-#printTable(data)
-#
-#data = dbExec("SELECT * FROM system.service_entity_machine")
-#printTable(data)
 
