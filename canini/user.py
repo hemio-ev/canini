@@ -22,6 +22,13 @@ def add_commands_to_parser(subparsers):
     cmd_password.set_defaults(func=password)
     cmd_password.add_argument('username', metavar='<username>')
 
+    # update
+    cmd_update = cmd.add_parser('update', help='Updates user')
+    cmd_update.set_defaults(func=update)
+    cmd_update.add_argument('username', metavar='<username>')
+    cmd_update.add_argument('--no-login', action='store_true', help='Disables login (deletes password)')
+    cmd_update.add_argument('--email', help='Sets email contact')
+
     # list
     cmd_list = cmd.add_parser('list', help='Appoints <deputy> as deputy for <represented>')
     cmd_list.set_defaults(func=list)
@@ -43,17 +50,18 @@ def add_commands_to_parser(subparsers):
 def create(args, conn):
     if args.login:
     	pw = crypt.mksalt(crypt.METHOD_SHA512)[-10:]
-    	print("Username: {0}\nPassword: {1}".format(args.username, pw))
     else:
         pw = None
 
+    print("Username: {0}\nPassword: {1}".format(args.username, pw))
+
     cur = conn.cursor()
     cur.execute("""
-     INSERT INTO "user"."user" (owner, password, login, contact_email)
+     INSERT INTO "user"."user" (owner, password, contact_email)
       VALUES (
        %(username)s, 
+       -- if supplied password is null do not hash password and insert NULL instead
        CASE WHEN %(password)s IS NOT NULL THEN commons._hash_password(%(password)s) END, 
-       %(login)s, 
        %(email)s
       )
     """, dict(vars(args), password=pw))
@@ -85,11 +93,35 @@ def password(args, conn):
 
     conn.commit()
 
+def update(args, conn):
+    cur = conn.cursor()
+
+    if args.no_login:
+        cur.execute("""
+         UPDATE "user"."user" SET password=NULL
+         WHERE owner=%(username)s 
+        """, vars(args))
+
+    if args.email:
+        cur.execute("""
+         UPDATE "user"."user" SET contact_email=%(email)s
+         WHERE owner=%(username)s 
+        """, vars(args))
+
+    if cur.rowcount != 1:
+        print("Error, user not found")
+
+    conn.commit()
+
 def list(args, conn):
     cur = conn.cursor()
     cur.execute("""
-     SELECT owner, login, contact_email, 
-      ARRAY(SELECT deputy::varchar FROM "user".deputy WHERE represented=owner) AS deputies
+     SELECT
+      owner, 
+      contact_email,
+      password IS NOT NULL AS login,
+      ARRAY(SELECT deputy::varchar FROM "user".deputy WHERE represented=owner ORDER BY deputy)
+      AS deputies
      FROM "user"."user"
      WHERE owner LIKE %(user_pattern)s
      ORDER BY owner
