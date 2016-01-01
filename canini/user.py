@@ -30,7 +30,7 @@ def add_commands_to_parser(subparsers):
     cmd_update.add_argument('--email', help='Sets email contact')
 
     # list
-    cmd_list = cmd.add_parser('list', help='Appoints <deputy> as deputy for <represented>')
+    cmd_list = cmd.add_parser('list', help='Lists existing users')
     cmd_list.set_defaults(func=list)
     cmd_list.add_argument('user_pattern', nargs='?', default='%', metavar='user_pattern')
     
