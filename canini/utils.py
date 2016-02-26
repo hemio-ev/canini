@@ -1,4 +1,23 @@
 from prettytable import (PrettyTable, ALL, PLAIN_COLUMNS)
+import json
+
+def setOption(d, string, value):
+    keys = string.split('.')
+    x = {}
+    cur = x
+    for k in keys[:-1]:
+        new = {}
+        cur.update({k: new})
+        cur = new
+    cur.update({keys[-1]: value})
+    d.update(x)
+
+def deleteOption(d, string):
+    keys = string.split('.')
+    cur = d
+    for k in keys[:-1]:
+        cur = cur[k]
+    del cur[keys[-1]]
 
 def printTable(data):
     if not data:
@@ -19,7 +38,10 @@ def printTable(data):
     print(x)
 
 def printCurAsTable(cur):
-    printTable(list(map(lambda x: x._asdict(), cur.fetchall())))
+    printTable(getDict(cur))
+
+def getDict(cur):
+    return list(map(lambda x: x._asdict(), cur.fetchall()))
 
 def varToChar(var):
     if var is None:

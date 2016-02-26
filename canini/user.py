@@ -1,5 +1,6 @@
 from canini import *
 import crypt
+import json
 
 def add_commands_to_parser(subparsers):
     cmd = subparsers.add_parser('user', help='User account management').add_subparsers()
@@ -33,6 +34,19 @@ def add_commands_to_parser(subparsers):
     cmd_list = cmd.add_parser('list', help='Lists existing users')
     cmd_list.set_defaults(func=list)
     cmd_list.add_argument('user_pattern', nargs='?', default='%', metavar='user_pattern')
+
+    # delete-option
+    cmd_delete_option = cmd.add_parser('delete-option', help='Deletes user option')
+    cmd_delete_option.set_defaults(func=delete_option)
+    cmd_delete_option.add_argument('username', metavar='<username>')
+    cmd_delete_option.add_argument('option', metavar='<option>', help="Dot separated keys, (example: invoice.address.street)")
+
+    # set-option
+    cmd_set_option = cmd.add_parser('set-option', help='Sets user option')
+    cmd_set_option.set_defaults(func=set_option)
+    cmd_set_option.add_argument('username', metavar='<username>')
+    cmd_set_option.add_argument('option', metavar='<option>', help="Dot separated keys, (example: invoice.address.street)")
+    cmd_set_option.add_argument('value', metavar='<value>')
     
     # appoint-deputy
     cmd_appoint_deputy = cmd.add_parser('appoint-deputy', help='Appoints <deputy> as deputy for <represented>')
@@ -121,12 +135,49 @@ def list(args, conn):
       contact_email,
       password IS NOT NULL AS login,
       ARRAY(SELECT deputy::varchar FROM "user".deputy WHERE represented=owner ORDER BY deputy)
-      AS deputies
+      AS deputies,
+      option
      FROM "user"."user"
      WHERE owner LIKE %(user_pattern)s
      ORDER BY owner
     """, vars(args))
-    utils.printCurAsTable(cur)
+    dict = utils.getDict(cur)
+    for r in dict:
+        if r['option']:
+            r['option'] = json.dumps(r['option'], sort_keys=True, indent=1)
+    utils.printTable(dict)
+
+def delete_option(args, conn):
+    cur = conn.cursor()
+    cur.execute("""
+     SELECT option FROM "user"."user"
+     WHERE owner = %(username)s
+    """, vars(args))
+    jsonDict = utils.getDict(cur)[0]['option']
+    if jsonDict is None:
+        jsonDict = {}
+    utils.deleteOption(jsonDict, args.option)
+    cur.execute("""
+     UPDATE "user"."user" SET option=%(json)s
+     WHERE owner = %(username)s
+    """, dict(vars(args), json=json.dumps(jsonDict)))
+    conn.commit()
+
+def set_option(args, conn):
+    cur = conn.cursor()
+    cur.execute("""
+     SELECT option FROM "user"."user"
+     WHERE owner = %(username)s
+    """, vars(args))
+    jsonDict = utils.getDict(cur)[0]['option']
+    if jsonDict is None:
+        jsonDict = {}
+    utils.setOption(jsonDict, args.option, args.value)
+    cur.execute("""
+     UPDATE "user"."user" SET option=%(json)s
+     WHERE owner = %(username)s
+    """, dict(vars(args), json=json.dumps(jsonDict)))
+    conn.commit()
 
 def appoint_deputy(args, conn):
     cur = conn.cursor()
