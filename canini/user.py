@@ -1,6 +1,12 @@
 from canini import *
+import canini
 import crypt
 import json
+
+def add_objects_to_chown(subparsers):
+    cmd = subparsers.add_parser('user.user', help='Rename user')
+    cmd.add_argument('current_owner', metavar='<current owner>', help='')
+    canini.chown.complete(cmd, '"user"."user"', {'owner': 'current_owner'})
 
 def add_commands_to_parser(subparsers):
     cmd = subparsers.add_parser('user', help='User account management').add_subparsers()
