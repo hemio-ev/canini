@@ -1,12 +1,10 @@
-import canini.user
-import canini.coupon
 import canini.chown
-import canini.email
 import argcomplete, argparse
+import importlib
 
-mods = [ canini.email, canini.user, canini.coupon ]
+def parser(modules):
+    mods = [ importlib.import_module(name) for name in modules ]
 
-def parser():
     parser = argparse.ArgumentParser(prog='canini')
     
     subparsers = parser.add_subparsers()
