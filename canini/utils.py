@@ -4,13 +4,15 @@ import json
 def setOption(d, string, value):
     keys = string.split('.')
     x = {}
-    cur = x
+    cur = d
     for k in keys[:-1]:
         new = {}
-        cur.update({k: new})
-        cur = new
+        if k not in cur:
+            cur.update({k: new})
+            cur = new
+        else:
+            cur = cur[k]
     cur.update({keys[-1]: value})
-    d.update(x)
 
 def deleteOption(d, string):
     keys = string.split('.')
