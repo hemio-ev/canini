@@ -9,7 +9,7 @@ def add_objects_to_chown(subparsers):
     canini.chown.complete(cmd, '"user"."user"', {'owner': 'current_owner'})
 
 def add_commands_to_parser(subparsers):
-    cmd = subparsers.add_parser('user', help='User account management').add_subparsers()
+    cmd = subparsers.add_parser('user', help='User accounts').add_subparsers()
    
     # create 
     cmd_create = cmd.add_parser('create', help='Creates user')
