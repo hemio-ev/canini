@@ -22,7 +22,9 @@ except FileNotFoundError:
 
 parser = canini.arg.parser(config['modules'])
 
-conn = psycopg2.connect("postgres://postgres@/carnivora", cursor_factory=NamedTupleCursor)
+conn = psycopg2.connect(
+    config.get('connection', 'dbname=carnivora'),
+    cursor_factory=NamedTupleCursor)
 
 try:
     args = parser.parse_args()
