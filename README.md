@@ -7,6 +7,7 @@ Required debian packages
 - python3-argcomplete
 - python3-prettytable
 - python3-psycopg2
+- python3-yaml
 
 To enable auto completion for all python software with argcomplete support
 
