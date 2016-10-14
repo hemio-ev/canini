@@ -17,6 +17,7 @@ def add_commands_to_parser(subparsers):
     cmd_create.set_defaults(func=create)
     cmd_create.add_argument('username', metavar='<username>')
     cmd_create.add_argument('--login', action='store_true', help='Allows user login and sets random password')
+    cmd_create.add_argument('--print-password-only', action='store_true', help='Only with --login')
     cmd_create.add_argument('--email', help='Email contact for user')
 
     # delete
@@ -73,8 +74,6 @@ def create(args, conn):
     else:
         pw = None
 
-    print("Username: {0}\nPassword: {1}".format(args.username, pw))
-
     cur = conn.cursor()
     cur.execute("""
      INSERT INTO "user"."user" (owner, password, contact_email)
@@ -85,7 +84,13 @@ def create(args, conn):
        %(email)s
       )
     """, dict(vars(args), password=pw))
+
     conn.commit()
+    
+    if args.print_password_only:
+        print(pw)
+    else:
+        print("Username: {0}\nPassword: {1}".format(args.username, pw))
 
 def delete(args, conn):
     cur = conn.cursor()
