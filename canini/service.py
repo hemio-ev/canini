@@ -1,8 +1,10 @@
-import canini
 import psycopg2
 import yaml
 import os
 import os.path
+import json
+
+import canini
 
 def add_commands_to_parser(subparsers):
     cmd = subparsers.add_parser('service', help='Service').add_subparsers()
@@ -56,6 +58,8 @@ def reload(args, conn):
             .format(table)
             )
 
+    cur.execute("DELETE FROM system.service_entity_dns")
+
     for machine in config['machines']:
         cur.execute("""
 INSERT INTO backend.machine AS t (name) VALUES (%(name)s)
@@ -99,23 +103,19 @@ INSERT INTO system.subservice_entity AS t (service, service_entity_name, subserv
    AND t.service_entity_name = excluded.service_entity_name
    AND t.subservice = excluded.subservice""", {**service,'subservice':subservice})
 
+        for dns in service['dns']:
+            cur.execute("""
+INSERT INTO system.service_entity_dns
+    (service_entity_name, service, type, rdata, ttl, domain_prefix)
+    VALUES (%(entity_name)s, %(service)s, %(type)s, %(rdata)s, %(ttl)s, %(domain_prefix)s)
+""", {**service, 'type': dns['type'], 'rdata': json.dumps(dns['rdata']), 'ttl': dns.get('ttl', None), 'domain_prefix': dns.get('domain_prefix', None)})
+
+
     for table in tables:
-        try:
-            cur.execute("SAVEPOINT last");
-            cur.execute(
-                "DELETE FROM {} WHERE option->'__DELETE' IS NOT NULL"
-                .format(table)
-                )
-        except psycopg2.IntegrityError as e:
-            cur.execute("ROLLBACK TO SAVEPOINT last")
-            cur.execute(
-                "SELECT * FROM {} WHERE option->'__DELETE' IS NOT NULL"
-                .format(table)
-                )
-            print("The following objects were not deleted due to this error:")
-            print("MESSAGE: ", e.diag.message_primary)
-            print("DETAIL: ", e.diag.message_detail)
-            canini.utils.printCurAsTable(cur, ignore=['option'])
+        cur.execute(
+            "DELETE FROM {} WHERE option->'__DELETE' IS NOT NULL"
+            .format(table)
+            )
 
     conn.commit()
 
