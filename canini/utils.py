@@ -21,12 +21,14 @@ def deleteOption(d, string):
         cur = cur[k]
     del cur[keys[-1]]
 
-def printTable(data):
+def printTable(data, ignore=[]):
     if not data:
         print(PrettyTable(["EMPTY"]))
         return
 
-    x = PrettyTable(data[0].keys())
+    rawdata = list(map(lambda x: {k: x[k] for k in x if k not in ignore}, data))
+
+    x = PrettyTable(rawdata[0].keys())
 
     x.align = "l"
     x.vertical_char = "│"
@@ -34,13 +36,13 @@ def printTable(data):
     x.junction_char = "┼"
     x.hrules = ALL
 
-    for row in data:
+    for row in rawdata:
         values = map(varToChar, row.values())
         x.add_row(list(values))
     print(x)
 
-def printCurAsTable(cur):
-    printTable(getDict(cur))
+def printCurAsTable(cur, ignore=[]):
+    printTable(getDict(cur), ignore=ignore)
 
 def getDict(cur):
     return list(map(lambda x: x._asdict(), cur.fetchall()))

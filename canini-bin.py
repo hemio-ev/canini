@@ -22,17 +22,16 @@ except FileNotFoundError:
 
 parser = canini.arg.parser(config['modules'])
 
-conn = psycopg2.connect(
-    config.get('connection', 'dbname=carnivora'),
-    cursor_factory=NamedTupleCursor)
-
 try:
     args = parser.parse_args()
     func = args.func
 except AttributeError:
     parser.print_usage()
     exit(2)
-conn.commit()
+
+conn = psycopg2.connect(
+    config.get('connection', 'dbname=carnivora'),
+    cursor_factory=NamedTupleCursor)
 
 func(args, conn)
 
