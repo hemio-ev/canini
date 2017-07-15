@@ -3,6 +3,8 @@ import yaml
 import os
 import os.path
 import json
+import jsonschema
+import sys
 
 import canini
 
@@ -36,11 +38,77 @@ def list_subservice_entity(args, conn):
     canini.utils.printCurAsTable(cur)
 
 def reload(args, conn):
+    schema = {
+        'type': "object",
+        'additionalProperties': False,
+        'properties': {
+            "machines": {
+                'type': "array",
+                'items': {
+                    'type': "object",
+                    'additionalProperties': False,
+                    'required': ["name"],
+                    'properties': {
+                        "name": { 'type': "string" },
+                        "auth_roles": {
+                            'type': "array",
+                            'items': { 'type': "string" }
+                        }
+                    }
+                }
+            },
+
+            "services": {
+                'type': "array",
+                'items': {
+                    'type': "object",
+                    'additionalProperties': False,
+                    'required': ["service", "subservices", "machines", "dns", "entity_name"],
+                    'properties': {
+                        'service': { 'type': "string" },
+                        'subservices': {
+                            'type': "array",
+                            'items': { 'type': "string" }
+                        },
+                        'entity_name': { 'type': "string" } ,
+                        'machines': {
+                            'type': "array",
+                            'items': { 'type': "string" }
+                        },
+                        'dns': {
+                            'type': "array",
+                            'items': {
+                                'type': "object",
+                                'additionalProperties': False,
+                                'required': ['type', 'rdata'],
+                                'properties': {
+                                    "type": { 'type': "string" },
+                                    "rdata": { 'type': "object" },
+                                    "domain_prefix": { 'type': "string" },
+                                    "ttl": { 'type': "integer" }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     config = {"services":[], "machines":[]}
 
     for p in os.scandir('/etc/carnivora/service.d'):
         with open(p.path) as f:
             c = yaml.safe_load(f)
+
+            try:
+                jsonschema.validate(c, schema)
+            except jsonschema.ValidationError as e:
+                print("Error in config ", p.path, file=sys.stderr)
+                print("Setting ", list(e.absolute_path), file=sys.stderr)
+                sys.exit(e.message)
+
             config['services'] += c.get('services', [])
             config['machines'] += c.get('machines', [])
 
