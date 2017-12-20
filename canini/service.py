@@ -14,6 +14,7 @@ def add_commands_to_parser(subparsers):
     # reload
     cmd_reload = cmd.add_parser('reload', help='reload')
     cmd_reload.set_defaults(func=reload)
+    cmd_reload.add_argument('--config-dir', default='/etc/carnivora', help='Config dir')
 
     # list-subservice
     cmd_list_subservice = cmd.add_parser('list-subservice', help='List subservices')
@@ -98,7 +99,7 @@ def reload(args, conn):
 
     config = {"services":[], "machines":[]}
 
-    for p in os.scandir('/etc/carnivora/service.d'):
+    for p in os.scandir(args.config_dir + '/service.d'):
         with open(p.path) as f:
             c = yaml.safe_load(f)
 
@@ -111,6 +112,9 @@ def reload(args, conn):
 
             config['services'] += c.get('services', [])
             config['machines'] += c.get('machines', [])
+
+    if not config['services'] and not config['machines']:
+        sys.exit("ERROR: Configuration is empty. Will NOT load an empty setup.")
 
     tables = [
          'system.service_entity'
