@@ -99,7 +99,7 @@ def reload(args, conn):
 
     config = {"services":[], "machines":[]}
 
-    for p in os.scandir(args.config_dir + '/service.d'):
+    for p in os.scandir(args.config_dir + '/conf.d'):
         with open(p.path) as f:
             c = yaml.safe_load(f)
 
